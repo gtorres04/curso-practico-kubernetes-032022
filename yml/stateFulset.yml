@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: miservicestatefulset
+  namespace: paradigma
+  labels:
+    app: nginxstatefulset
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginxstatefulset
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mistatefulset
+  namespace: paradigma
+spec:
+  selector:
+    matchLabels:
+      app: nginxstatefulset
+  serviceName: miservicestatefulset
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginxstatefulset
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: pvc
+      namespace: paradigma
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi

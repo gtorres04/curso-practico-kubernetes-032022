@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mijavaapp
+  namespace: example
+spec:
+  containers:
+  - name: mijavaapp
+    image: fernandocabadas/postgresqlapp:latest

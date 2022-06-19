@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:  
+  name: micronjob
+  namespace: paradigma
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: ubuntu
+            image: ubuntu
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Ejecutando un job dentro de un cronjob
+          restartPolicy: OnFailure
