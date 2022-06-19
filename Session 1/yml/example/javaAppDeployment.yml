@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mijavaapp
+  namespace: example
+spec:
+  strategy:
+    type: RollingUpdate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mijavaapp
+  template:
+    metadata:
+      labels:
+        app: mijavaapp
+    spec:
+      containers:
+        - image: fernandocabadas/postgresqlapp:latest
+          name: mijavaapp
+          imagePullPolicy: "IfNotPresent"

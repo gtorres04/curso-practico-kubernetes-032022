@@ -1,0 +1,591 @@
+Se verifica el estado de minikube y se inicia:
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin Kubernetes % minikube status
+minikube
+type: Control Plane
+host: Stopped
+kubelet: Stopped
+apiserver: Stopped
+kubeconfig: Stopped
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin Kubernetes % minikube start 
+😄  minikube v1.25.2 en Darwin 12.4
+✨  Using the docker driver based on existing profile
+👍  Starting control plane node minikube in cluster minikube
+🚜  Pulling base image ...
+🔄  Restarting existing docker container for "minikube" ...
+🐳  Preparando Kubernetes v1.23.3 en Docker 20.10.12...
+    ▪ kubelet.housekeeping-interval=5m
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Complementos habilitados: storage-provisioner, default-storageclass
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+gerlinorlandotorres@MacBook-Pro-de-Gerlin Kubernetes % minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+************* LISTAR LOS NODOS QUE EXISTEN EN EL CLUSTER *************
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin Kubernetes % kubectl get nodes
+NAME       STATUS   ROLES                  AGE   VERSION
+minikube   Ready    control-plane,master   22h   v1.23.3
+gerlinorlandotorres@MacBook-Pro-de-Gerlin Kubernetes % kubectl get nodes -o wide
+NAME       STATUS   ROLES                  AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+minikube   Ready    control-plane,master   22h   v1.23.3   192.168.49.2   <none>        Ubuntu 20.04.2 LTS   5.10.104-linuxkit   docker://20.10.12
+
+************* POD ***************
+
+Referencia: https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/
+
+contenido del archivo pod.yml:
+-----------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mipod
+spec:
+  containers:
+  - name: busybox
+    image: busybox:latest
+    command: ['sh', '-c', 'sleep 3600']
+-----------------------------------------
+
+* Se ejecuta un pod mediante el archivo pod.yml y se consulta los pods que esten desplegados en el cluster.
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f pod.yml 
+pod/mipod created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -o wide
+NAME    READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
+mipod   1/1     Running   0          5m21s   172.17.0.3   minikube   <none>           <none>
+
+* Ver el detalle de un pod
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl describe pod mipod
+Name:         mipod
+Namespace:    default
+Priority:     0
+Node:         minikube/192.168.49.2
+Start Time:   Thu, 16 Jun 2022 21:53:49 +0200
+Labels:       <none>
+Annotations:  <none>
+Status:       Running
+IP:           172.17.0.3
+IPs:
+  IP:  172.17.0.3
+Containers:
+  busybox:
+    Container ID:  docker://b6d604f1a36085f9f6fb7911ac20dcf66f230cd0e7b65050dd84ff7692c798a1
+    Image:         busybox:latest
+    Image ID:      docker-pullable://busybox@sha256:3614ca5eacf0a3a1bcc361c939202a974b4902b9334ff36eb29ffe9011aaad83
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      sleep 3600
+    State:          Running
+      Started:      Thu, 16 Jun 2022 21:53:54 +0200
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-c6scl (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-c6scl:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  14m   default-scheduler  Successfully assigned default/mipod to minikube
+  Normal  Pulling    14m   kubelet            Pulling image "busybox:latest"
+  Normal  Pulled     14m   kubelet            Successfully pulled image "busybox:latest" in 3.823464342s
+  Normal  Created    14m   kubelet            Created container busybox
+  Normal  Started    14m   kubelet            Started container busybox
+
+* Entrar en un contenedor del pod y ejecutar un comando en el contenedor:
+
+kubectl exec -it <nombre del pod> -c <nombre del contenedor> -- <comando a ejecutar dentro del contenedor>
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl exec -it mipod -c busybox -- ls -l
+total 36
+drwxr-xr-x    2 root     root         12288 Jun  6 22:13 bin
+drwxr-xr-x    5 root     root           360 Jun 16 19:53 dev
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 etc
+drwxr-xr-x    2 nobody   nobody        4096 Jun  6 22:13 home
+dr-xr-xr-x  252 root     root             0 Jun 16 19:53 proc
+drwx------    2 root     root          4096 Jun  6 22:13 root
+dr-xr-xr-x   13 root     root             0 Jun 16 19:53 sys
+drwxrwxrwt    2 root     root          4096 Jun  6 22:13 tmp
+drwxr-xr-x    3 root     root          4096 Jun  6 22:13 usr
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 var
+
+* Acceder al contenedor
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl exec -it mipod -c busybox -- sh   
+/ # ls -l
+total 36
+drwxr-xr-x    2 root     root         12288 Jun  6 22:13 bin
+drwxr-xr-x    5 root     root           360 Jun 16 19:53 dev
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 etc
+drwxr-xr-x    2 nobody   nobody        4096 Jun  6 22:13 home
+dr-xr-xr-x  252 root     root             0 Jun 16 19:53 proc
+drwx------    1 root     root          4096 Jun 16 20:26 root
+dr-xr-xr-x   13 root     root             0 Jun 16 19:53 sys
+drwxrwxrwt    2 root     root          4096 Jun  6 22:13 tmp
+drwxr-xr-x    3 root     root          4096 Jun  6 22:13 usr
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 var
+/ # mkdir test
+/ # ls -l
+total 40
+drwxr-xr-x    2 root     root         12288 Jun  6 22:13 bin
+drwxr-xr-x    5 root     root           360 Jun 16 19:53 dev
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 etc
+drwxr-xr-x    2 nobody   nobody        4096 Jun  6 22:13 home
+dr-xr-xr-x  253 root     root             0 Jun 16 19:53 proc
+drwx------    1 root     root          4096 Jun 16 20:26 root
+dr-xr-xr-x   13 root     root             0 Jun 16 19:53 sys
+drwxr-xr-x    2 root     root          4096 Jun 16 20:26 test
+drwxrwxrwt    2 root     root          4096 Jun  6 22:13 tmp
+drwxr-xr-x    3 root     root          4096 Jun  6 22:13 usr
+drwxr-xr-x    1 root     root          4096 Jun 16 19:53 var
+/ # exit
+
+* Borrar un pod
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -o wide                  
+NAME    READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+mipod   1/1     Running   0          36m   172.17.0.3   minikube   <none>           <none>
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl delete pod mipod 
+pod "mipod" deleted
+^[[A^C
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -o wide
+NAME    READY   STATUS        RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
+mipod   1/1     Terminating   0          37m   172.17.0.3   minikube   <none>           <none>
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -w     
+^C%                                                                                                                                                                                                           
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods   
+No resources found in default namespace.
+
+
+************* NAMESPACES *************
+
+Refernce: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+
+* Listar los namespaces del cluster
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get ns
+NAME              STATUS   AGE
+default           Active   23h
+kube-node-lease   Active   23h
+kube-public       Active   23h
+kube-system       Active   23h
+
+* Crear un namespaces
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl create ns paradigma
+namespace/paradigma created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get ns             
+NAME              STATUS   AGE
+default           Active   23h
+kube-node-lease   Active   23h
+kube-public       Active   23h
+kube-system       Active   23h
+paradigma         Active   3s
+
+** Consultar los recursos o elementos de un namespaces
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma
+No resources found in paradigma namespace.
+
+* Desplegamos un objeto pod con el namespaces especificado, usando el archivo namespacePod.yml
+
+Contenido del archivo:
+----------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: minamespacepod
+  namespace: paradigma
+spec:
+  containers:
+  - name: busybox
+    image: busybox:latest
+    command: ['sh', '-c', 'sleep 3600']
+----------------------------------------
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f namespacePod.yml 
+pod/minamespacepod created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma    
+NAME             READY   STATUS    RESTARTS   AGE
+minamespacepod   1/1     Running   0          6s
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl describe pod minamespacepod       
+Error from server (NotFound): pods "minamespacepod" not found
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl describe pod minamespacepod -n paradigma
+Name:         minamespacepod
+Namespace:    paradigma
+Priority:     0
+Node:         minikube/192.168.49.2
+Start Time:   Thu, 16 Jun 2022 22:48:27 +0200
+Labels:       <none>
+Annotations:  <none>
+Status:       Running
+IP:           172.17.0.3
+IPs:
+  IP:  172.17.0.3
+Containers:
+  busybox:
+    Container ID:  docker://85611b50a2640b68626be62701e87d3e749384f463d04dc36c5852cf87a54c72
+    Image:         busybox:latest
+    Image ID:      docker-pullable://busybox@sha256:3614ca5eacf0a3a1bcc361c939202a974b4902b9334ff36eb29ffe9011aaad83
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      sleep 3600
+    State:          Running
+      Started:      Thu, 16 Jun 2022 22:48:30 +0200
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ndnjx (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  kube-api-access-ndnjx:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  3m28s  default-scheduler  Successfully assigned paradigma/minamespacepod to minikube
+  Normal  Pulling    3m28s  kubelet            Pulling image "busybox:latest"
+  Normal  Pulled     3m26s  kubelet            Successfully pulled image "busybox:latest" in 1.864981093s
+  Normal  Created    3m26s  kubelet            Created container busybox
+  Normal  Started    3m26s  kubelet            Started container busybox
+
+************* CONFIGMAPS *************
+referencia: https://kubernetes.io/docs/concepts/configuration/configmap/
+
+configMap.yml
+----------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: miconfigmap
+   namespace: paradigma
+data:
+   miClave: "Este es el valor la variable MICLAVE"
+   otraClave: "Este es el valor de la variable OTRACLAVE"
+----------------------------------------------------------
+
+* Desplegamos un config map desde el fichero configMap.yml
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f configMap.yml                  
+configmap/miconfigmap created
+
+* Listamos los config maps que existen en el namespace paradigma
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get cm -n paradigma                 
+NAME               DATA   AGE
+kube-root-ca.crt   1      16h
+miconfigmap        2      93s
+
+* Describir un config map
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl describe cm miconfigmap -n paradigma
+Name:         miconfigmap
+Namespace:    paradigma
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+miClave:
+----
+Este es el valor la variable MICLAVE
+otraClave:
+----
+Este es el valor de la variable OTRACLAVE
+
+BinaryData
+====
+
+Events:  <none>
+
+* como pasar datos de un ConfigMap a un contenedor dentro de un pod como una variable de entorno, usando el fichero configMapPod.yml
+
+configMapPod.yml
+-----------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: miconfigmappod
+  namespace: paradigma
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu:20.04
+    command: ['sh', '-c', "echo $(MIVARIABLE) && sleep 3600"]
+    env:
+    - name: MIVARIABLE
+      valueFrom:
+        configMapKeyRef:
+          name: miconfigmap
+          key: miClave
+-----------------------------------------------------------------
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f configMapPod.yml           
+pod/miconfigmappod created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma             
+NAME             READY   STATUS    RESTARTS      AGE
+miconfigmappod   1/1     Running   0             12s
+minamespacepod   1/1     Running   1 (46m ago)   16h
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl logs miconfigmappod -n paradigma
+Este es el valor la variable MICLAVE
+
+************* SECRET *************
+
+reference: https://kubernetes.io/docs/concepts/configuration/secret/
+
+secret.yml
+----------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: misecret
+  namespace: paradigma
+stringData:
+  miPassword: "Este es el valor la variable MIPASSWORD"
+----------------------------------------------------------------
+secretPod.yml
+----------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: misecretpod
+  namespace: paradigma
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu:20.04
+    command: ['sh', '-c', "echo $(MIPASSWORD) && sleep 3600"]
+    env:
+    - name: MIPASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: misecret
+          key: miPassword
+----------------------------------------------------------------
+
+* Se listan y se crean los secret usando el fichero secret.yml
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get secret -n paradigma     
+NAME                  TYPE                                  DATA   AGE
+default-token-v7b2d   kubernetes.io/service-account-token   3      17h
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f secret.yml             
+secret/misecret created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get secret -n paradigma
+NAME                  TYPE                                  DATA   AGE
+default-token-v7b2d   kubernetes.io/service-account-token   3      17h
+misecret              Opaque                                1      2s
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl describe secret misecret -n paradigma 
+Name:         misecret
+Namespace:    paradigma
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+miPassword:  39 bytes
+
+* como pasar datos de un Secret a un contenedor dentro de un pod como una variable de entorno, usando el fichero secretPod.yml
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma           
+NAME             READY   STATUS    RESTARTS      AGE
+miconfigmappod   1/1     Running   0             40m
+minamespacepod   1/1     Running   2 (26m ago)   17h
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f secretPod.yml               
+pod/misecretpod created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma 
+NAME             READY   STATUS    RESTARTS      AGE
+miconfigmappod   1/1     Running   0             40m
+minamespacepod   1/1     Running   2 (26m ago)   17h
+misecretpod      1/1     Running   0             3s
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl logs misecretpod -n paradigma
+Este es el valor la variable MIPASSWORD
+
+************* RESOURCE QUOTA *************
+
+reference: https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/quota-memory-cpu-namespace/
+
+Las cuotas de recursos administra la memoria y la cpu dentro de un namespace. Esto permitirá limitar el uso de los recursos del cluster por parte de los pods de un namespace.
+
+resourceQuota.yml
+-----------------------------
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name:  miresourcequota
+  namespace: paradigma
+spec:
+  hard:
+    limits.cpu: "500m"
+    limits.memory: 1G
+-----------------------------
+
+spec.hard.limit.cpu: especifica el limite de cpu que manejara el namespace
+spec.hard.limit.memory: especifica el limite de mamoria que manejara el namespace
+
+Especificado esto, los pods relacionados a este namespace no podran hacer uso de cpu y memoria superior al especificado en resourceQuota.
+
+* Desplegamos la cuota de recurso
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma        
+NAME             READY   STATUS    RESTARTS        AGE
+miconfigmappod   1/1     Running   2 (4m41s ago)   42h
+minamespacepod   1/1     Running   4 (4m41s ago)   2d11h
+misecretpod      1/1     Running   2 (4m41s ago)   41h
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f resourceQuota.yml   
+resourcequota/miresourcequota created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma
+NAME              AGE   REQUEST   LIMIT
+miresourcequota   25s             limits.cpu: 0/500m, limits.memory: 0/1G
+
+NOTA: me pregunto porque si ya existen pods en el namespace, porque al consultar el recurso de quota me dice que existe 0 cpu y memoria consumidos.
+Supongo que las quotas de recursos estan estrictamente relacionadas con las ResuorcesRequerements.
+
+************* RESOURCE REQUEREMENTS *************
+
+Estableceremos los límites de recursos a utilizar por el Pod. Las solicitudes y límites de recursos proporcionan un gran control sobre cómo se asignarán los recursos sobre el pod.
+
+Cuando especificas el recurso request para Contenedores en un Pod, el Scheduler de Kubernetes usa esta información para decidir en qué nodo colocar el Pod y reserva al menos la cantidad especificada en request para el contenedor, estos parametros son los necesarios para que el contenedor inicie sin problemas. Cuando especificas el recurso limit para un Contenedor, Kubernetes impone estos límites, así que el contenedor no puede utilizar más recursos que el límite que le definimos, estos parametros son los necesarios para que la aplicacion que esta en el contenedor pueda funcionar en condiciones normales.
+
+
+resourcePod.yml
+-----------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: miresourcepod
+  namespace: paradigma
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu:20.04
+    command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
+    resources:
+      requests:
+        memory: "64M"
+        cpu: "250m"
+      limits:
+        memory: "128M"
+        cpu: "500m"
+-----------------------------------------------------------------
+resourcePod2.yml
+-----------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: miresourcepod2
+  namespace: paradigma
+spec:
+  containers:
+  - name: ubuntu
+    image: ubuntu:20.04
+    command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
+    resources:
+      requests:
+        memory: "64M"
+        cpu: "250m"
+      limits:
+        memory: "128M"
+        cpu: "500m"
+-----------------------------------------------------------------
+* desplegar un resource requerement en un pod, mediante el resourcePod.yml
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma   
+NAME             READY   STATUS    RESTARTS      AGE
+miconfigmappod   1/1     Running   2 (34m ago)   43h
+minamespacepod   1/1     Running   4 (34m ago)   2d12h
+miresourcepod    1/1     Running   0             4s
+misecretpod      1/1     Running   2 (34m ago)   42h
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma -o wine
+error: unable to match a printer suitable for the output format "wine", allowed formats are: custom-columns,custom-columns-file,go-template,go-template-file,json,jsonpath,jsonpath-as-json,jsonpath-file,name,template,templatefile,wide,yaml
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma        
+NAME              AGE   REQUEST   LIMIT
+miresourcequota   29m             limits.cpu: 500m/500m, limits.memory: 128M/1G
+
+* Desplegamos un segundo pod, mediante el resourcePod2.yml, siendo consientes que el total de cpu se ha consumido con el el pod miresourcepod.
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f resourcePod2.yml             
+Error from server (Forbidden): error when creating "resourcePod2.yml": pods "miresourcepod2" is forbidden: exceeded quota: miresourcequota, requested: limits.cpu=500m, used: limits.cpu=500m, limited: limits.cpu=500m
+
+* Cambiemos el total de cpu a la cuota de recursos, y volvemos a ejecutar el segundo pod mediante el resourcePod2.yml
+
+resourceQuota.yml
+--------------------------
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name:  miresourcequota
+  namespace: paradigma
+spec:
+  hard:
+    limits.cpu: "1000m"
+    limits.memory: 1G
+---------------------------
+
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma
+NAME              AGE   REQUEST   LIMIT
+miresourcequota   33m             limits.cpu: 500m/500m, limits.memory: 128M/1G
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f resourceQuota.yml            
+resourcequota/miresourcequota configured
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma
+NAME              AGE   REQUEST   LIMIT
+miresourcequota   34m             limits.cpu: 500m/1, limits.memory: 128M/1G
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl apply -f resourcePod2.yml     
+pod/miresourcepod2 created
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get resourcequota -n paradigma
+NAME              AGE   REQUEST   LIMIT
+miresourcequota   42m             limits.cpu: 1/1, limits.memory: 256M/1G
+gerlinorlandotorres@MacBook-Pro-de-Gerlin yml % kubectl get pods -n paradigma                 
+NAME             READY   STATUS    RESTARTS      AGE
+miconfigmappod   1/1     Running   2 (48m ago)   43h
+minamespacepod   1/1     Running   4 (48m ago)   2d12h
+miresourcepod    1/1     Running   0             14m
+miresourcepod2   1/1     Running   0             24s
+misecretpod      1/1     Running   2 (48m ago)   42h
+

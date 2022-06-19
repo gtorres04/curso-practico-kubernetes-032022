@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: miconfigmap
+   namespace: paradigma
+data:
+   miClave: "Este es el valor la variable MICLAVE"
+   otraClave: "Este es el valor de la variable OTRACLAVE"
