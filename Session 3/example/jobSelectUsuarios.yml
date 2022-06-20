@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: miselectusuarios
+  namespace: example
+spec:
+  template:
+    spec:      
+      containers:
+      - name: mijavaappselectusuarios
+        image: fernandocabadas/postgresqlapp:latest
+        args:
+        - /bin/sh
+        - -c
+        - java -cp PostgresqlApp.jar selectusuarios
+      restartPolicy: Never
+  backoffLimit: 4

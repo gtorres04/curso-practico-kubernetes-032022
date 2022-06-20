@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: midroptable
+  namespace: example
+spec:
+  template:
+    spec:
+      containers:
+      - name: mijavaappdroptable
+        image: fernandocabadas/postgresqlapp:latest
+        args:
+        - /bin/sh
+        - -c
+        - java -cp PostgresqlApp.jar droptable
+      restartPolicy: Never
+  backoffLimit: 4

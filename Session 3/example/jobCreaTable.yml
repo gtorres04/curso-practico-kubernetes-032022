@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: micreatable
+  namespace: example
+spec:
+  template:
+    spec:
+      containers:
+      - name: mijavaappcreatable
+        image: fernandocabadas/postgresqlapp:latest
+        args:
+        - /bin/sh
+        - -c
+        - java -cp PostgresqlApp.jar creatable
+      restartPolicy: Never
+  backoffLimit: 4
